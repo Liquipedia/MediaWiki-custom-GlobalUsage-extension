@@ -20,3 +20,5 @@ The following changes have been made:
 * Add the following line to LocalSettings.php:
 
         wfLoadExtension( 'GlobalUsage' );
+
+* Follow the installation process of the original extension.
