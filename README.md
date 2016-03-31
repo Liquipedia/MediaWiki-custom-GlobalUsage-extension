@@ -1,4 +1,6 @@
-# MediaWiki-custom-GlobalUsage-extension
+MediaWiki-custom-GlobalUsage-extension
+======================================
+
 This is based on https://www.mediawiki.org/wiki/Extension:GlobalUsage
 
 The following changes have been made:
