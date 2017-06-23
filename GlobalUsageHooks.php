@@ -6,15 +6,14 @@
  */
 
 class GlobalUsageHooks {
-	private static $gu = null;
-
 	/**
 	 * Hook to LinksUpdateComplete
 	 * Deletes old links from usage table and insert new ones.
 	 * @param $linksUpdater LinksUpdate
+	 * @param int|null $ticket
 	 * @return bool
 	 */
-	public static function onLinksUpdateComplete( $linksUpdater ) {
+	public static function onLinksUpdateComplete( LinksUpdate $linksUpdater, $ticket = null ) {
 		$title = $linksUpdater->getTitle();
 
 		// Create a list of locally existing images (DB keys)
@@ -22,24 +21,11 @@ class GlobalUsageHooks {
 
 		$localFiles = array();
 		$repo = RepoGroup::singleton()->getLocalRepo();
-		if ( defined( 'FileRepo::NAME_AND_TIME_ONLY' ) ) { // MW 1.23
-			$imagesInfo = $repo->findFiles( $images, FileRepo::NAME_AND_TIME_ONLY );
-			foreach ( $imagesInfo as $dbKey => $info ) {
-				$localFiles[] = $dbKey;
-				if ( $dbKey !== $info['title'] ) { // redirect
-					$localFiles[] = $info['title'];
-				}
-			}
-		} else {
-			// Unrolling findFiles() here because pages with thousands of images trigger an OOM
-			foreach ( $images as $dbKey ) {
-				$file = $repo->findFile( $dbKey );
-				if ( $file ) {
-					$localFiles[] = $dbKey;
-					if ( $file->getTitle()->getDBkey() !== $dbKey ) { // redirect
-						$localFiles[] = $file->getTitle()->getDBkey();
-					}
-				}
+		$imagesInfo = $repo->findFiles( $images, FileRepo::NAME_AND_TIME_ONLY );
+		foreach ( $imagesInfo as $dbKey => $info ) {
+			$localFiles[] = $dbKey;
+			if ( $dbKey !== $info['title'] ) { // redirect
+				$localFiles[] = $info['title'];
 			}
 		}
 		$localFiles = array_values( array_unique( $localFiles ) );
@@ -55,9 +41,9 @@ class GlobalUsageHooks {
 		$removed = array_diff( $existing, $missingFiles );
 
 		// Add new usages and delete removed
-		$gu->insertLinks( $title, $added );
+		$gu->insertLinks( $title, $added, Title::GAID_FOR_UPDATE, $ticket );
 		if ( $removed ) {
-			$gu->deleteLinksFromPage( $articleId, $removed );
+			$gu->deleteLinksFromPage( $articleId, $removed, $ticket );
 		}
 
 		return true;
@@ -106,6 +92,7 @@ class GlobalUsageHooks {
 	 */
 	public static function onArticleDeleteComplete( $article, $user, $reason, $id ) {
 		$gu = self::getGlobalUsage();
+		// @FIXME: avoid making DB replication lag
 		$gu->deleteLinksFromPage( $id );
 
 		return true;
@@ -195,14 +182,7 @@ class GlobalUsageHooks {
 	 * @return GlobalUsage
 	 */
 	private static function getGlobalUsage() {
-		global $wgGlobalUsageDatabase;
-		if ( is_null( self::$gu ) ) {
-			self::$gu = new GlobalUsage( wfWikiId(),
-				wfGetDB( DB_MASTER, array(), $wgGlobalUsageDatabase )
-			);
-		}
-
-		return self::$gu;
+		return new GlobalUsage( wfWikiID(), GlobalUsage::getGlobalDB( DB_MASTER ) );
 	}
 
 	/**

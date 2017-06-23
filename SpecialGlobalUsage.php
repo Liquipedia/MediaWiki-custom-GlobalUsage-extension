@@ -31,6 +31,9 @@ class SpecialGlobalUsage extends SpecialPage {
 
 		$this->setHeaders();
 		$this->getOutput()->addWikiMsg( 'globalusage-header' );
+		if ( !is_null( $this->target ) ) {
+			$this->getOutput()->addWikiMsg( 'globalusage-header-image', $this->target->getText() );
+		}
 		$this->showForm();
 
 		if ( is_null( $this->target ) ) {
@@ -89,6 +92,7 @@ class SpecialGlobalUsage extends SpecialPage {
 	 * Creates as queryer and executes it based on $this->getRequest()
 	 */
 	private function showResult() {
+		global $wgConf;
 		$query = new GlobalUsageQuery( $this->target );
 		$request = $this->getRequest();
 
@@ -118,7 +122,6 @@ class SpecialGlobalUsage extends SpecialPage {
 		$out->addHtml( $navbar );
 
 		$out->addHtml( '<div id="mw-globalusage-result">' );
-		global $wgConf;
 		foreach ( $query->getSingleImageResult() as $wiki => $result ) {
 			$out->addHtml(
 				'<h2>' . $this->msg(

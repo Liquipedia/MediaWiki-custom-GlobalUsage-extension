@@ -1,10 +1,12 @@
 <?php
+use MediaWiki\MediaWikiServices;
 
 class GlobalUsage {
+	/** @var string */
 	private $interwiki;
 
 	/**
-	 * @var DatabaseBase
+	 * @var IDatabase
 	 */
 	private $db;
 
@@ -12,9 +14,9 @@ class GlobalUsage {
 	 * Construct a GlobalUsage instance for a certain wiki.
 	 *
 	 * @param $interwiki string Interwiki prefix of the wiki
-	 * @param $db mixed Database object
+	 * @param $db IDatabase Database object
 	 */
-	public function __construct( $interwiki, $db ) {
+	public function __construct( $interwiki, IDatabase $db ) {
 		$this->interwiki = $interwiki;
 		$this->db = $db;
 	}
@@ -25,8 +27,13 @@ class GlobalUsage {
 	 * @param $title Title Title of the page
 	 * @param $images array Array of db keys of images used
 	 * @param $pageIdFlags int
+	 * @param $ticket int|null
 	 */
-	public function insertLinks( $title, $images, $pageIdFlags = Title::GAID_FOR_UPDATE ) {
+	public function insertLinks(
+		Title $title, array $images, $pageIdFlags = Title::GAID_FOR_UPDATE, $ticket = null
+	) {
+		global $wgUpdateRowsPerQuery;
+
 		$insert = array();
 		foreach ( $images as $name ) {
 			$insert[] = array(
@@ -38,7 +45,13 @@ class GlobalUsage {
 				'gil_to' => $name
 			);
 		}
-		$this->db->insert( 'globalimagelinks', $insert, __METHOD__, array( 'IGNORE' ) );
+
+		$lbFactory = MediaWikiServices::getInstance()->getDBLoadBalancerFactory();
+		$ticket = $ticket ?: $lbFactory->getEmptyTransactionTicket( __METHOD__ );
+		foreach ( array_chunk( $insert, $wgUpdateRowsPerQuery ) as $insertBatch ) {
+			$this->db->insert( 'globalimagelinks', $insertBatch, __METHOD__, array( 'IGNORE' ) );
+			$lbFactory->commitAndWaitForReplication( __METHOD__, $ticket );
+		}
 	}
 
 	/**
@@ -58,8 +71,10 @@ class GlobalUsage {
 		);
 
 		$images = array();
-		foreach ( $res as $row )
+		foreach ( $res as $row ) {
 			$images[] = $row->gil_to;
+		}
+
 		return $images;
 	}
 
@@ -68,16 +83,26 @@ class GlobalUsage {
 	 *
 	 * @param $id int Page id of the page
 	 * @param $to mixed File name(s)
+	 * @param $ticket int|null
 	 */
-	public function deleteLinksFromPage( $id, $to = null ) {
+	public function deleteLinksFromPage( $id, array $to = null, $ticket = null ) {
+		global $wgUpdateRowsPerQuery;
+
 		$where = array(
 			'gil_wiki' => $this->interwiki,
 			'gil_page' => $id
 		);
 		if ( $to ) {
-			$where['gil_to'] = $to;
+			$lbFactory = MediaWikiServices::getInstance()->getDBLoadBalancerFactory();
+			$ticket = $ticket ?: $lbFactory->getEmptyTransactionTicket( __METHOD__ );
+			foreach ( array_chunk( $to, $wgUpdateRowsPerQuery ) as $toBatch ) {
+				$where['gil_to'] = $toBatch;
+				$this->db->delete( 'globalimagelinks', $where, __METHOD__ );
+				$lbFactory->commitAndWaitForReplication( __METHOD__, $ticket );
+			}
+		} else {
+			$this->db->delete( 'globalimagelinks', $where, __METHOD__ );
 		}
-		$this->db->delete( 'globalimagelinks', $where, __METHOD__ );
 	}
 
 	/**
@@ -101,16 +126,16 @@ class GlobalUsage {
 	 *
 	 * @param $title Title Title of the file to copy entries from.
 	 */
-	public function copyLocalImagelinks( $title ) {
+	public function copyLocalImagelinks( Title $title ) {
 		global $wgContLang;
 
-		$dbr = wfGetDB( DB_SLAVE );
-		$res = $dbr->select(
+		$res = $this->db->select(
 			array( 'imagelinks', 'page' ),
 			array( 'il_to', 'page_id', 'page_namespace', 'page_title' ),
 			array( 'il_from = page_id', 'il_to' => $title->getDBkey() ),
 			__METHOD__
 		);
+
 		$insert = array();
 		foreach ( $res as $row ) {
 			$insert[] = array(
@@ -122,7 +147,11 @@ class GlobalUsage {
 				'gil_to' => $row->il_to,
 			);
 		}
-		$this->db->insert( 'globalimagelinks', $insert, __METHOD__, array( 'IGNORE' ) );
+
+		$fname = __METHOD__;
+		DeferredUpdates::addCallableUpdate( function () use ( $insert, $fname ) {
+			$this->db->insert( 'globalimagelinks', $insert, $fname, array( 'IGNORE' ) );
+		} );
 	}
 
 	/**
@@ -208,7 +237,8 @@ class GlobalUsage {
 	 * Adding a utility method here, as this same query is used in
 	 * two different special page classes.
 	 *
-	 * @return Array Query info array, as a QueryPage would expect.
+	 * @param string|bool $wiki
+	 * @return array Query info array, as a QueryPage would expect.
 	 */
 	public static function getWantedFilesQueryInfo( $wiki = false ) {
 		$qi = array(
@@ -254,5 +284,19 @@ class GlobalUsage {
 		}
 
 		return $qi;
+	}
+
+	/**
+	 * @param integer $index DB_MASTER/DB_REPLICA
+	 * @param array $groups
+	 * @return IDatabase
+	 */
+	public static function getGlobalDB( $index, $groups = [] ) {
+		global $wgGlobalUsageDatabase;
+
+		$lbFactory = MediaWikiServices::getInstance()->getDBLoadBalancerFactory();
+		$lb = $lbFactory->getMainLB( $wgGlobalUsageDatabase );
+
+		return $lb->getConnectionRef( $index, [], $wgGlobalUsageDatabase );
 	}
 }

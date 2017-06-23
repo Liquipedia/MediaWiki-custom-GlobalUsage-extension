@@ -35,6 +35,7 @@ class GlobalUsageImagePageHooks {
 	 * @return bool
 	 */
 	public static function onImagePageAfterImageLinks( $imagePage, &$html ) {
+		global $wgConf;
 		if ( !self::hasResults( $imagePage ) ) {
 			return true;
 		}
@@ -47,7 +48,6 @@ class GlobalUsageImagePageHooks {
 
 		$guHtml = '';
 		foreach ( $query->getSingleImageResult() as $wiki => $result ) {
-			global $wgConf;
 			$wikiName = $wgConf->get( 'wgSitename', $wiki );
 			$escWikiName = Sanitizer::escapeClass( $wikiName );
 			$guHtml .= "<li class='mw-gu-onwiki-$escWikiName'>" . $context->msg(
@@ -95,6 +95,7 @@ class GlobalUsageImagePageHooks {
 	 * @return bool
 	 */
 	protected static function hasResults( $imagePage ) {
+		global $wgDBprefix;
 		# Don't display links if the target file does not exist
 		$file = $imagePage->getFile();
 		if ( !$file->exists() ) {
@@ -106,7 +107,6 @@ class GlobalUsageImagePageHooks {
 		# we detect this is a bit hacky and less than ideal. See bug 23136 for
 		# a discussion.
 		global $wgGlobalUsageDatabase;
-		global $wgDBprefix;
 		$dbr = wfGetDB( DB_SLAVE );
 		if ( $file->getRepoName() == 'local'
 			&& $dbr->getDBname()."-".$wgDBprefix != $wgGlobalUsageDatabase
