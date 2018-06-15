@@ -1,7 +1,7 @@
 <?php
 
 class GlobalUsageImagePageHooks {
-	private static $queryCache = array();
+	private static $queryCache = [];
 
 	/**
 	 * Get an executed query for use on image pages
@@ -30,8 +30,8 @@ class GlobalUsageImagePageHooks {
 	/**
 	 * Show a global usage section on the image page
 	 *
-	 * @param $imagePage ImagePage
-	 * @param string $html HTML to add to the image page as global usage section
+	 * @param ImagePage $imagePage
+	 * @param string &$html HTML to add to the image page as global usage section
 	 * @return bool
 	 */
 	public static function onImagePageAfterImageLinks( $imagePage, &$html ) {
@@ -53,8 +53,9 @@ class GlobalUsageImagePageHooks {
 			$guHtml .= "<li class='mw-gu-onwiki-$escWikiName'>" . $context->msg(
 				'globalusage-on-wiki',
 				$targetName, $wikiName )->parse() . "\n<ul>";
-			foreach ( $result as $item )
+			foreach ( $result as $item ) {
 				$guHtml .= "\t<li>" . SpecialGlobalUsage::formatItem( $item ) . "</li>\n";
+			}
 			$guHtml .= "</ul></li>\n";
 		}
 
@@ -74,8 +75,8 @@ class GlobalUsageImagePageHooks {
 
 	/**
 	 * Show a link to the global image links in the TOC if there are any results available.
-	 * @param $imagePage ImagePage
-	 * @param $toc array
+	 * @param ImagePage $imagePage
+	 * @param array &$toc
 	 * @return bool
 	 */
 	public static function onImagePageShowTOC( $imagePage, &$toc ) {
@@ -91,7 +92,7 @@ class GlobalUsageImagePageHooks {
 	 * Check whether there are results for an image page. Checks whether the
 	 * file exists and is not local.
 	 *
-	 * @param $imagePage ImagePage
+	 * @param ImagePage $imagePage
 	 * @return bool
 	 */
 	protected static function hasResults( $imagePage ) {
@@ -103,13 +104,13 @@ class GlobalUsageImagePageHooks {
 		}
 
 		# Don't show global usage if the file is local.
-		# Do show it however if the current repo is the shared repo. The way 
+		# Do show it however if the current repo is the shared repo. The way
 		# we detect this is a bit hacky and less than ideal. See bug 23136 for
 		# a discussion.
 		global $wgGlobalUsageDatabase;
-		$dbr = wfGetDB( DB_SLAVE );
+		$dbr = wfGetDB( DB_REPLICA );
 		if ( $file->getRepoName() == 'local'
-			&& $dbr->getDBname()."-".$wgDBprefix != $wgGlobalUsageDatabase
+			&& $dbr->getDBname() . '-' . $wgDBprefix != $wgGlobalUsageDatabase
 		) {
 			return false;
 		}

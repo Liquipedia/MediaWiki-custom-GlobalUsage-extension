@@ -16,9 +16,9 @@ class SpecialGloballyWantedFiles extends WantedFilesPage {
 	/**
 	 * Main execution function. Use the parent if we're on the right wiki.
 	 * If we're not on a shared repo, try to redirect there.
+	 * @param string $par
 	 */
 	function execute( $par ) {
-		global $wgGlobalUsageSharedRepoWiki;
 		if ( GlobalUsage::onSharedRepo() ) {
 			parent::execute( $par );
 		} else {
@@ -47,7 +47,7 @@ class SpecialGloballyWantedFiles extends WantedFilesPage {
 	 * Also make sure that GlobalUsage db same as shared repo.
 	 * (To catch the unlikely case where GlobalUsage db is different db from the
 	 * shared repo db).
-	 * @return boolean
+	 * @return bool
 	 */
 	function isCacheable() {
 		global $wgGlobalUsageDatabase;
@@ -58,7 +58,7 @@ class SpecialGloballyWantedFiles extends WantedFilesPage {
 	/**
 	 * Only list this special page on the wiki that is the shared repo.
 	 *
-	 * @return boolean Should this be listed in Special:SpecialPages
+	 * @return bool Should this be listed in Special:SpecialPages
 	 */
 	function isListed() {
 		return GlobalUsage::onSharedRepo();
@@ -74,8 +74,8 @@ class SpecialGloballyWantedFiles extends WantedFilesPage {
 	 * We need to override this in order to link to Special:GlobalUsage
 	 * instead of Special:WhatLinksHere.
 	 *
-	 * @param $skin Skin
-	 * @param $result stdClass A row from the database
+	 * @param Skin $skin
+	 * @param stdClass $result A row from the database
 	 * @return String HTML to output
 	 */
 	public function formatResult( $skin, $result ) {
@@ -87,18 +87,19 @@ class SpecialGloballyWantedFiles extends WantedFilesPage {
 		$title = Title::makeTitle( $result->namespace, $result->title );
 		$safeTitle = Title::makeTitleSafe( $result->namespace, $result->title );
 		if ( $title instanceof Title && $safeTitle instanceof Title ) {
-			$pageLink = Linker::link( $title );
+			$linkRenderer = $this->getLinkRenderer();
+			$pageLink = $linkRenderer->makeLink( $title );
 			if ( $safeTitle->isKnown() && wfFindFile( $safeTitle ) ) {
 				// If the title exists and is a file, than strike.
-				// The wfFindFile() call should already be cached from Linker::link call
+				// The wfFindFile() call should already be cached from LinkRenderer::makeLink call
 				// so it shouldn't be too expensive. However a future @todo would be
 				// to do preload existence checks for files all at once via RepoGroup::findFiles.
-				$pageLink = Html::rawElement( 'del', array(), $pageLink );
+				$pageLink = Html::rawElement( 'del', [], $pageLink );
 			}
 
 			$gu = SpecialPage::getTitleFor( 'GlobalUsage', $title->getDBKey() );
-			$label = $this->msg( 'nlinks' )->numParams( $result->value )->escaped();
-			$usages = Linker::link( $gu, $label );
+			$label = $this->msg( 'nlinks' )->numParams( $result->value )->text();
+			$usages = $linkRenderer->makeLink( $gu, $label );
 
 			return $this->getLanguage()->specialList( $pageLink, $usages );
 		} else {

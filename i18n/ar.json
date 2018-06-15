@@ -5,11 +5,14 @@
 			"Meno25",
 			"OsamaK",
 			"Abanima",
-			"Maroen1990"
+			"Maroen1990",
+			"أحمد",
+			"ديفيد"
 		]
 	},
-	"globalusage": "الاستخدام العام للملف",
+	"globalusage": "الاستخدام العالمي للملف",
 	"globalusage-for": "استخدام \"$1\" العام",
+	"globalusage-filename": "اسم الملف:",
 	"globalusage-desc": "[[Special:GlobalUsage|صفحة خاصة]] لرؤية الاستخدام العام للملف",
 	"globalusage-ok": "بحث",
 	"globalusage-text": "ابحث في الاستخدام العام لملف",
@@ -24,9 +27,13 @@
 	"globallywantedfiles-summary": "قائمة بالملفات الموصول إليها أكبر عدد من المرات في جميع الويكيات رغم أنها غير موجودة. للحصول على القائمة التي لا تأخذ في الحسبان إلا حالات الاستعمال في {{SITENAME}}، راجع [[{{#special:WantedFiles}}]].\nقد بشكل غير صحيح يتم الإبلاغ الويكي الحساسة اذا أردت.",
 	"globallywantedfiles-foreign-repo": "<strong>تنبيه:</strong> هذا الويكي يستعمل مخزن ملفات خارجي. ستظهر الملفات من المخزن الخارجي المستخدمة في هذا الويكي على شكل وصلات زرقاء مشطوبة رغم أن هذه الملفات موجودة.",
 	"apihelp-query+globalusage-description": "يعطي المعلومات عن استخدام صورة معينة في جميع الويكيات.",
+	"apihelp-query+globalusage-summary": "يرجع استخدام الصورة العالمي لصورة معينة.",
 	"apihelp-query+globalusage-param-prop": "أي الخصائص لإرجاعها:\n;url:يضيف مسار.\n;pageid:يضيف رقم صفحة.\n;namespace:يضيف رقم نطاق.",
 	"apihelp-query+globalusage-param-limit": "عدد الوصلات في النتيجة.",
 	"apihelp-query+globalusage-param-filterlocal": "ترشيح الاستخدام المحلي للملف.",
 	"apihelp-query+globalusage-example-1": "الحصول على استخدام [[:File:Example.jpg]]",
-	"globalusage-header": "هذه الصفحة تعرض أين الملف مستخدم في الويكيات الأخرى. يمكنك أيضا أن تجد هذه المعلومات أسفل صفحة وصف الملف."
+	"globalusage-header": "هذه الصفحة تعرض أين الملف مستخدم في الويكيات الأخرى. يمكنك أيضا أن تجد هذه المعلومات أسفل صفحة وصف الملف.",
+	"globallyunusedfiles": "ملفات غير مستخمة عالميا",
+	"globallyunusedfilestext": "الملفات التالية موجودة لكنها ليست مستخدمة على أي ويكي.",
+	"globallyunusedfiles-error-nonsharedrepo": "هذه الويكي ليست على المستودع المشترك."
 }

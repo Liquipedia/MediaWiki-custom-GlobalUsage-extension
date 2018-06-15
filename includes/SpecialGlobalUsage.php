@@ -21,7 +21,7 @@ class SpecialGlobalUsage extends SpecialPage {
 
 	/**
 	 * Entry point
-	 * @param $par String
+	 * @param string $par
 	 */
 	public function execute( $par ) {
 		$target = $par ? $par : $this->getRequest()->getVal( 'target' );
@@ -41,7 +41,8 @@ class SpecialGlobalUsage extends SpecialPage {
 			return;
 		}
 
-		$this->getOutput()->setPageTitle( $this->msg( 'globalusage-for', $this->target->getPrefixedText() ) );
+		$this->getOutput()->setPageTitle(
+			$this->msg( 'globalusage-for', $this->target->getPrefixedText() ) );
 
 		$this->showResult();
 	}
@@ -52,40 +53,90 @@ class SpecialGlobalUsage extends SpecialPage {
 	private function showForm() {
 		global $wgScript;
 
+		$this->getOutput()->enableOOUI();
 		/* Build form */
-		$html = Xml::openElement( 'form', array( 'action' => $wgScript ) ) . "\n";
-		// Name of SpecialPage
-		$html .= Html::hidden( 'title', $this->getPageTitle()->getPrefixedText() ) . "\n";
-		// Limit
-		$html .= Html::hidden( 'limit', $this->getRequest()->getInt( 'limit', 50 ) );
-		// Input box with target prefilled if available
-		$formContent = "\t" . Xml::input( 'target', 40, is_null( $this->target ) ? ''
-			: $this->target->getText() )
-			// Submit button
-			. "\n\t" . Xml::element( 'input', array(
-			'type' => 'submit',
-			'value' => $this->msg( 'globalusage-ok' )->text()
-		) )
-			// Filter local checkbox
-			. "\n\t<p>" . Xml::checkLabel( $this->msg( 'globalusage-filterlocal' )->text(),
-			'filterlocal', 'mw-filterlocal', $this->filterLocal ) . '</p>';
+		$form = new OOUI\FormLayout( [
+			'method' => 'get',
+			'action' => $wgScript,
+		] );
+
+		$fields = [];
+		$fields[] = new OOUI\FieldLayout(
+			new OOUI\TextInputWidget( [
+				'name' => 'target',
+				'id' => 'target',
+				'autosize' => true,
+				'infusable' => true,
+				'value' => is_null( $this->target ) ? '' : $this->target->getText(),
+			] ),
+			[
+				'label' => $this->msg( 'globalusage-filename' )->text(),
+				'align' => 'top',
+			]
+		);
+
+		// Filter local checkbox
+		$fields[] = new OOUI\FieldLayout(
+			new OOUI\CheckboxInputWidget( [
+				'name' => 'filterlocal',
+				'id' => 'mw-filterlocal',
+				'value' => '1',
+				'selected' => $this->filterLocal,
+			] ),
+			[
+				'align' => 'inline',
+				'label' => $this->msg( 'globalusage-filterlocal' )->text(),
+			]
+		);
+
+		// Submit button
+		$fields[] = new OOUI\FieldLayout(
+			new OOUI\ButtonInputWidget( [
+				'value' => $this->msg( 'globalusage-ok' )->text(),
+				'label' => $this->msg( 'globalusage-ok' )->text(),
+				'flags' => [ 'primary', 'progressive' ],
+				'type' => 'submit',
+			] ),
+			[
+				'align' => 'top',
+			]
+		);
+
+		$fieldset = new OOUI\FieldsetLayout( [
+			'label' => $this->msg( 'globalusage-text' )->text(),
+			'id' => 'globalusage-text',
+			'items' => $fields,
+		] );
+
+		$form->appendContent(
+			$fieldset,
+			new OOUI\HtmlSnippet(
+				Html::hidden( 'title', $this->getPageTitle()->getPrefixedText() )  .
+				Html::hidden( 'limit', $this->getRequest()->getInt( 'limit', 50 ) )
+			)
+		);
+
+		$this->getOutput()->addHTML(
+			new OOUI\PanelLayout( [
+				'expanded' => false,
+				'padded' => true,
+				'framed' => true,
+				'content' => $form,
+			] )
+		);
 
 		if ( !is_null( $this->target ) && wfFindFile( $this->target ) ) {
 			// Show the image if it exists
-			$html .= Linker::makeThumbLinkObj(
+			$html = Linker::makeThumbLinkObj(
 				$this->target,
 				wfFindFile( $this->target ),
 				/* $label */ $this->target->getPrefixedText(),
 				/* $alt */ '', /* $align */ $this->getLanguage()->alignEnd(),
-				/* $handlerParams */ array(), /* $framed */ false,
+				/* $handlerParams */ [], /* $framed */ false,
 				/* $manualThumb */ false
 			);
+			$this->getOutput()->addHtml( $html );
 		}
-
-		// Wrap the entire form in a nice fieldset
-		$html .= Xml::fieldSet( $this->msg( 'globalusage-text' )->text(), $formContent ) . "\n</form>";
-
-		$this->getOutput()->addHtml( $html );
 	}
 
 	/**
@@ -141,7 +192,7 @@ class SpecialGlobalUsage extends SpecialPage {
 
 	/**
 	 * Helper to format a specific item
-	 * @param $item array
+	 * @param array $item
 	 * @return String
 	 */
 	public static function formatItem( $item ) {
@@ -160,7 +211,7 @@ class SpecialGlobalUsage extends SpecialPage {
 	/**
 	 * Helper function to create the navbar, stolen from wfViewPrevNext
 	 *
-	 * @param $query GlobalUsageQuery An executed GlobalUsageQuery object
+	 * @param GlobalUsageQuery $query An executed GlobalUsageQuery object
 	 * @return string Navbar HTML
 	 */
 	protected function getNavBar( $query ) {
@@ -179,53 +230,54 @@ class SpecialGlobalUsage extends SpecialPage {
 		}
 
 		# Get prev/next link display text
-		$prev = $this->msg( 'prevn' )->numParams( $limit )->escaped();
-		$next = $this->msg( 'nextn' )->numParams( $limit )->escaped();
+		$prevMsg = $this->msg( 'prevn' )->numParams( $limit );
+		$nextMsg = $this->msg( 'nextn' )->numParams( $limit );
 		# Get prev/next link title text
 		$pTitle = $this->msg( 'prevn-title' )->numParams( $limit )->escaped();
 		$nTitle = $this->msg( 'nextn-title' )->numParams( $limit )->escaped();
 
 		# Fetch the title object
 		$title = $this->getPageTitle();
+		$linkRenderer = $this->getLinkRenderer();
 
 		# Make 'previous' link
 		if ( $to ) {
-			$attr = array( 'title' => $pTitle, 'class' => 'mw-prevlink' );
-			$q = array( 'limit' => $limit, 'to' => $to, 'target' => $target );
+			$attr = [ 'title' => $pTitle, 'class' => 'mw-prevlink' ];
+			$q = [ 'limit' => $limit, 'to' => $to, 'target' => $target ];
 			if ( $this->filterLocal ) {
 				$q['filterlocal'] = '1';
 			}
-			$plink = Linker::link( $title, $prev, $attr, $q );
+			$plink = $linkRenderer->makeLink( $title, $prevMsg->text(), $attr, $q );
 		} else {
-			$plink = $prev;
+			$plink = $prevMsg->escaped();
 		}
 
 		# Make 'next' link
 		if ( $from ) {
-			$attr = array( 'title' => $nTitle, 'class' => 'mw-nextlink' );
-			$q = array( 'limit' => $limit, 'from' => $from, 'target' => $target );
+			$attr = [ 'title' => $nTitle, 'class' => 'mw-nextlink' ];
+			$q = [ 'limit' => $limit, 'from' => $from, 'target' => $target ];
 			if ( $this->filterLocal ) {
 				$q['filterlocal'] = '1';
 			}
-			$nlink = Linker::link( $title, $next, $attr, $q );
+			$nlink = $linkRenderer->makeLink( $title, $nextMsg->text(), $attr, $q );
 		} else {
-			$nlink = $next;
+			$nlink = $nextMsg->escaped();
 		}
 
 		# Make links to set number of items per page
-		$numLinks = array();
+		$numLinks = [];
 		$lang = $this->getLanguage();
-		foreach ( array( 20, 50, 100, 250, 500 ) as $num ) {
+		foreach ( [ 20, 50, 100, 250, 500 ] as $num ) {
 			$fmtLimit = $lang->formatNum( $num );
 
-			$q = array( 'offset' => $offset, 'limit' => $num, 'target' => $target );
+			$q = [ 'offset' => $offset, 'limit' => $num, 'target' => $target ];
 			if ( $this->filterLocal ) {
 				$q['filterlocal'] = '1';
 			}
 			$lTitle = $this->msg( 'shown-title' )->numParams( $num )->escaped();
-			$attr = array( 'title' => $lTitle, 'class' => 'mw-numlink' );
+			$attr = [ 'title' => $lTitle, 'class' => 'mw-numlink' ];
 
-			$numLinks[] = Linker::link( $title, $fmtLimit, $attr, $q );
+			$numLinks[] = $linkRenderer->makeLink( $title, $fmtLimit, $attr, $q );
 		}
 		$nums = $lang->pipeList( $numLinks );
 

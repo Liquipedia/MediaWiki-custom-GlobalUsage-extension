@@ -7,6 +7,7 @@
 	},
 	"globalusage": "Globaalt Benotze vum Fichier",
 	"globalusage-for": "Globale Gebrauch vum \"$1\"",
+	"globalusage-filename": "Numm vum Fichier:",
 	"globalusage-desc": "[[Special:GlobalUsage|Spezialsäit]] fir d'globaalt Benotze vun engem Fichier ze gesinn",
 	"globalusage-ok": "Sichen",
 	"globalusage-text": "Nom globale Benotze vum Fichier sichen.",
@@ -16,5 +17,8 @@
 	"globalusage-more": "Kuckt [[{{#Special:GlobalUsage}}/$1|globale Gebrauch]] vun dësem Fichier.",
 	"globalusage-filterlocal": "Déi lokal Benotzung net weisen",
 	"mostgloballylinkedfiles": "Am dackste global verlinkt Fichieren",
-	"globallywantedfiles": "Global gewënscht Fichieren"
+	"globallywantedfiles": "Global gewënscht Fichieren",
+	"globallyunusedfiles": "Global net benotzt Fichieren",
+	"globallyunusedfilestext": "Dës Fichiere gëtt et awer si sinn a kenger Säit op dëser Wiki agebonnen.",
+	"globallyunusedfiles-error-nonsharedrepo": "Dës Wiki ass net an dem gemeinsamen Dossier"
 }

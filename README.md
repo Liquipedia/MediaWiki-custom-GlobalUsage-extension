@@ -5,14 +5,14 @@ This is based on https://www.mediawiki.org/wiki/Extension:GlobalUsage
 
 The following changes have been made:
 
-* GlobalUsageImagePageHooks.php
+* includes/GlobalUsageImagePageHooks.php
    * function onImagePageAfterImageLinks:
       * import global $wgConf;
       * replace call to WikiMap::getWikiName( $wiki ) by $wgConf->get( 'wgSitename', $wiki );
    * function hasResults:
       * import global $wgDBprefix;
       * concatenate the global to the database name $dbr->getDBname()."-".$wgDBprefix
-* SpecialGlobalUsage.php
+* includes/SpecialGlobalUsage.php
    * function showResult:
       * import global $wgConf;
       * replace call to WikiMap::getWikiName( $wiki ) by $wgConf->get( 'wgSitename', $wiki );

@@ -1,8 +1,15 @@
 {
 	"@metadata": {
 		"authors": [
-			"Karthi.dr"
+			"Karthi.dr",
+			"Girmitya",
+			"Thakurji",
+			"Abdul Kadir"
 		]
 	},
-	"globalusage-ok": "Khojo"
+	"globalusage": "Global file usage",
+	"globalusage-ok": "Khojo",
+	"globalusage-on-wiki": "$2 pe upyog",
+	"globalusage-of-file": "Ii aur duusra wiki ii file ke use kare hai:",
+	"globalusage-more": "View [[{{#Special:GlobalUsage}}/$1|more global usage]] of this file."
 }

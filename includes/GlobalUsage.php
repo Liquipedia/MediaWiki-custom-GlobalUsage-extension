@@ -1,5 +1,7 @@
 <?php
+
 use MediaWiki\MediaWikiServices;
+use Wikimedia\Rdbms\IDatabase;
 
 class GlobalUsage {
 	/** @var string */
@@ -13,8 +15,8 @@ class GlobalUsage {
 	/**
 	 * Construct a GlobalUsage instance for a certain wiki.
 	 *
-	 * @param $interwiki string Interwiki prefix of the wiki
-	 * @param $db IDatabase Database object
+	 * @param string $interwiki Interwiki prefix of the wiki
+	 * @param IDatabase $db Database object
 	 */
 	public function __construct( $interwiki, IDatabase $db ) {
 		$this->interwiki = $interwiki;
@@ -24,53 +26,53 @@ class GlobalUsage {
 	/**
 	 * Sets the images used by a certain page
 	 *
-	 * @param $title Title Title of the page
-	 * @param $images array Array of db keys of images used
-	 * @param $pageIdFlags int
-	 * @param $ticket int|null
+	 * @param Title $title Title of the page
+	 * @param array $images Array of db keys of images used
+	 * @param int $pageIdFlags
+	 * @param int|null $ticket
 	 */
 	public function insertLinks(
 		Title $title, array $images, $pageIdFlags = Title::GAID_FOR_UPDATE, $ticket = null
 	) {
 		global $wgUpdateRowsPerQuery;
 
-		$insert = array();
+		$insert = [];
 		foreach ( $images as $name ) {
-			$insert[] = array(
+			$insert[] = [
 				'gil_wiki' => $this->interwiki,
 				'gil_page' => $title->getArticleID( $pageIdFlags ),
 				'gil_page_namespace_id' => $title->getNamespace(),
 				'gil_page_namespace' => $title->getNsText(),
 				'gil_page_title' => $title->getDBkey(),
 				'gil_to' => $name
-			);
+			];
 		}
 
 		$lbFactory = MediaWikiServices::getInstance()->getDBLoadBalancerFactory();
 		$ticket = $ticket ?: $lbFactory->getEmptyTransactionTicket( __METHOD__ );
 		foreach ( array_chunk( $insert, $wgUpdateRowsPerQuery ) as $insertBatch ) {
-			$this->db->insert( 'globalimagelinks', $insertBatch, __METHOD__, array( 'IGNORE' ) );
+			$this->db->insert( 'globalimagelinks', $insertBatch, __METHOD__, [ 'IGNORE' ] );
 			$lbFactory->commitAndWaitForReplication( __METHOD__, $ticket );
 		}
 	}
 
 	/**
 	 * Get all global images from a certain page
-	 * @param $id int
+	 * @param int $id
 	 * @return array
 	 */
 	public function getLinksFromPage( $id ) {
 		$res = $this->db->select(
 			'globalimagelinks',
 			'gil_to',
-			array(
+			[
 				'gil_wiki' => $this->interwiki,
 				'gil_page' => $id,
-			),
+			],
 			__METHOD__
 		);
 
-		$images = array();
+		$images = [];
 		foreach ( $res as $row ) {
 			$images[] = $row->gil_to;
 		}
@@ -81,17 +83,17 @@ class GlobalUsage {
 	/**
 	 * Deletes all entries from a certain page to certain files
 	 *
-	 * @param $id int Page id of the page
-	 * @param $to mixed File name(s)
-	 * @param $ticket int|null
+	 * @param int $id Page id of the page
+	 * @param mixed $to File name(s)
+	 * @param int|null $ticket
 	 */
 	public function deleteLinksFromPage( $id, array $to = null, $ticket = null ) {
 		global $wgUpdateRowsPerQuery;
 
-		$where = array(
+		$where = [
 			'gil_wiki' => $this->interwiki,
 			'gil_page' => $id
-		);
+		];
 		if ( $to ) {
 			$lbFactory = MediaWikiServices::getInstance()->getDBLoadBalancerFactory();
 			$ticket = $ticket ?: $lbFactory->getEmptyTransactionTicket( __METHOD__ );
@@ -108,15 +110,15 @@ class GlobalUsage {
 	/**
 	 * Deletes all entries to a certain image
 	 *
-	 * @param $title Title Title of the file
+	 * @param Title $title Title of the file
 	 */
 	public function deleteLinksToFile( $title ) {
 		$this->db->delete(
 			'globalimagelinks',
-			array(
+			[
 				'gil_wiki' => $this->interwiki,
 				'gil_to' => $title->getDBkey()
-			),
+			],
 			__METHOD__
 		);
 	}
@@ -124,54 +126,54 @@ class GlobalUsage {
 	/**
 	 * Copy local links to global table
 	 *
-	 * @param $title Title Title of the file to copy entries from.
+	 * @param Title $title Title of the file to copy entries from.
 	 */
 	public function copyLocalImagelinks( Title $title ) {
 		global $wgContLang;
 
 		$res = $this->db->select(
-			array( 'imagelinks', 'page' ),
-			array( 'il_to', 'page_id', 'page_namespace', 'page_title' ),
-			array( 'il_from = page_id', 'il_to' => $title->getDBkey() ),
+			[ 'imagelinks', 'page' ],
+			[ 'il_to', 'page_id', 'page_namespace', 'page_title' ],
+			[ 'il_from = page_id', 'il_to' => $title->getDBkey() ],
 			__METHOD__
 		);
 
-		$insert = array();
+		$insert = [];
 		foreach ( $res as $row ) {
-			$insert[] = array(
+			$insert[] = [
 				'gil_wiki' => $this->interwiki,
 				'gil_page' => $row->page_id,
 				'gil_page_namespace_id' => $row->page_namespace,
 				'gil_page_namespace' => $wgContLang->getNsText( $row->page_namespace ),
 				'gil_page_title' => $row->page_title,
 				'gil_to' => $row->il_to,
-			);
+			];
 		}
 
 		$fname = __METHOD__;
 		DeferredUpdates::addCallableUpdate( function () use ( $insert, $fname ) {
-			$this->db->insert( 'globalimagelinks', $insert, $fname, array( 'IGNORE' ) );
+			$this->db->insert( 'globalimagelinks', $insert, $fname, [ 'IGNORE' ] );
 		} );
 	}
 
 	/**
 	 * Changes the page title
 	 *
-	 * @param $id int Page id of the page
-	 * @param $title Title New title of the page
+	 * @param int $id Page id of the page
+	 * @param Title $title New title of the page
 	 */
 	public function moveTo( $id, $title ) {
 		$this->db->update(
 			'globalimagelinks',
-			array(
+			[
 				'gil_page_namespace_id' => $title->getNamespace(),
 				'gil_page_namespace' => $title->getNsText(),
 				'gil_page_title' => $title->getDBkey()
-			),
-			array(
+			],
+			[
 				'gil_wiki' => $this->interwiki,
 				'gil_page' => $id
-			),
+			],
 			__METHOD__
 		);
 	}
@@ -218,7 +220,7 @@ class GlobalUsage {
 	 * @note This assumes the user has a single shared repo. If the user has
 	 *   multiple/nested foreign repos, then its unclear what it means to
 	 *   be on the "shared repo". See discussion on bug 23136.
-	 * @return boolean
+	 * @return bool
 	 */
 	public static function onSharedRepo() {
 		global $wgGlobalUsageSharedRepoWiki, $wgGlobalUsageDatabase;
@@ -241,43 +243,43 @@ class GlobalUsage {
 	 * @return array Query info array, as a QueryPage would expect.
 	 */
 	public static function getWantedFilesQueryInfo( $wiki = false ) {
-		$qi = array(
-			'tables' => array(
+		$qi = [
+			'tables' => [
 				'globalimagelinks',
 				'page',
 				'redirect',
 				'img1' => 'image',
 				'img2' => 'image',
-			),
-			'fields' => array(
+			],
+			'fields' => [
 				'namespace' => NS_FILE,
 				'title' => 'gil_to',
 				'value' => 'COUNT(*)'
-			),
-			'conds' => array(
+			],
+			'conds' => [
 				'img1.img_name' => null,
 				// We also need to exclude file redirects
 				'img2.img_name' => null,
-			 ),
-			'options' => array( 'GROUP BY' => 'gil_to' ),
-			'join_conds' => array(
-				'img1' => array( 'LEFT JOIN',
-					'gil_to = img_name'
-				),
-				'page' => array( 'LEFT JOIN', array(
+			 ],
+			'options' => [ 'GROUP BY' => 'gil_to' ],
+			'join_conds' => [
+				'img1' => [ 'LEFT JOIN',
+					'gil_to = img1.img_name'
+				],
+				'page' => [ 'LEFT JOIN', [
 					'gil_to = page_title',
 					'page_namespace' => NS_FILE,
-				) ),
-				'redirect' => array( 'LEFT JOIN', array(
+				] ],
+				'redirect' => [ 'LEFT JOIN', [
 					'page_id = rd_from',
 					'rd_namespace' => NS_FILE,
 					'rd_interwiki' => ''
-				) ),
-				'img2' => array( 'LEFT JOIN',
+				] ],
+				'img2' => [ 'LEFT JOIN',
 					'rd_title = img2.img_name'
-				)
-			)
-		);
+				]
+			]
+		];
 		if ( $wiki !== false ) {
 			// Limit to just one wiki.
 			$qi['conds']['gil_wiki'] = $wiki;
@@ -287,7 +289,7 @@ class GlobalUsage {
 	}
 
 	/**
-	 * @param integer $index DB_MASTER/DB_REPLICA
+	 * @param int $index DB_MASTER/DB_REPLICA
 	 * @param array $groups
 	 * @return IDatabase
 	 */

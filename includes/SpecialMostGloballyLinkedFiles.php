@@ -7,7 +7,9 @@
  * @author Brian Wolff <bawolff+wn@gmail.com>
  */
 
-class MostGloballyLinkedFilesPage extends MostimagesPage {
+use Wikimedia\Rdbms\IDatabase;
+
+class SpecialMostGloballyLinkedFiles extends MostimagesPage {
 
 	function __construct( $name = 'MostGloballyLinkedFiles' ) {
 		parent::__construct( $name );
@@ -16,9 +18,9 @@ class MostGloballyLinkedFilesPage extends MostimagesPage {
 	/**
 	 * Main execution function. Use the parent if we're on the right wiki.
 	 * If we're not on a shared repo, try to redirect there.
+	 * @param string $par
 	 */
 	function execute( $par ) {
-		global $wgGlobalUsageSharedRepoWiki;
 		if ( GlobalUsage::onSharedRepo() ) {
 			parent::execute( $par );
 		} else {
@@ -28,7 +30,7 @@ class MostGloballyLinkedFilesPage extends MostimagesPage {
 
 	/**
 	 * Don't want to do cached handling on non-shared repo, since we only redirect.
-	 * @return boolean
+	 * @return bool
 	 */
 	function isCacheable() {
 		return GlobalUsage::onSharedRepo();
@@ -40,18 +42,18 @@ class MostGloballyLinkedFilesPage extends MostimagesPage {
 	 */
 	function getQueryInfo() {
 		$this->assertOnSharedRepo();
-		return array(
-			'tables' => array( 'globalimagelinks' ),
-			'fields' => array(
+		return [
+			'tables' => [ 'globalimagelinks' ],
+			'fields' => [
 				'namespace' => NS_FILE,
 				'title' => 'gil_to',
 				'value' => 'COUNT(*)'
-			),
-			'options' => array(
+			],
+			'options' => [
 				'GROUP BY' => 'gil_to',
 				'HAVING' => 'COUNT(*) > 1'
-			)
-		);
+			]
+		];
 	}
 
 	/**
@@ -62,14 +64,16 @@ class MostGloballyLinkedFilesPage extends MostimagesPage {
 	 */
 	protected function assertOnSharedRepo() {
 		if ( !GlobalUsage::onSharedRepo() ) {
-			throw new Exception( "Special:MostGloballyLinkedFiles should only be processed on the shared repo" );
+			throw new Exception(
+				'Special:MostGloballyLinkedFiles should only be processed on the shared repo'
+			);
 		}
 	}
 
 	/**
 	 * Only list this special page on the wiki that is the shared repo.
 	 *
-	 * @return boolean Should this be listed in Special:SpecialPages
+	 * @return bool Should this be listed in Special:SpecialPages
 	 */
 	function isListed() {
 		return GlobalUsage::onSharedRepo();
@@ -79,6 +83,7 @@ class MostGloballyLinkedFilesPage extends MostimagesPage {
 	 * In most common configs (including WMF's), this wouldn't be needed. However
 	 * for completeness support having the shared repo db be separate from the
 	 * globalimagelinks db.
+	 * @return IDatabase
 	 */
 	function getRecacheDB() {
 		global $wgGlobalUsageDatabase;

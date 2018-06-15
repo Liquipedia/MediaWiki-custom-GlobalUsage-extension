@@ -1,14 +1,18 @@
 {
 	"name": "Global Usage",
-	"version": "2.1.0",
+	"version": "2.2.0",
 	"author": "Bryan Tong Minh",
 	"url": "https://www.mediawiki.org/wiki/Extension:GlobalUsage",
 	"descriptionmsg": "globalusage-desc",
 	"license-name": "MIT",
+	"requires": {
+		"MediaWiki": ">= 1.28.0"
+	},
 	"type": "specialpage",
 	"SpecialPages": {
-		"MostGloballyLinkedFiles": "MostGloballyLinkedFilesPage",
+		"MostGloballyLinkedFiles": "SpecialMostGloballyLinkedFiles",
 		"GloballyWantedFiles": "SpecialGloballyWantedFiles",
+		"GloballyUnusedFiles": "SpecialGloballyUnusedFiles",
 		"GlobalUsage": "SpecialGlobalUsage"
 	},
 	"JobClasses": {
@@ -26,15 +30,16 @@
 		"GlobalUsageAliases": "GlobalUsage.alias.php"
 	},
 	"AutoloadClasses": {
-		"GlobalUsage": "GlobalUsage_body.php",
-		"GlobalUsageHooks": "GlobalUsageHooks.php",
-		"GlobalUsageImagePageHooks": "GlobalUsageImagePageHooks.php",
-		"SpecialGlobalUsage": "SpecialGlobalUsage.php",
-		"GlobalUsageQuery": "GlobalUsageQuery.php",
-		"ApiQueryGlobalUsage": "ApiQueryGlobalUsage.php",
-		"GlobalUsageCachePurgeJob": "GlobalUsageCachePurgeJob.php",
-		"MostGloballyLinkedFilesPage": "SpecialMostGloballyLinkedFiles.php",
-		"SpecialGloballyWantedFiles": "SpecialGloballyWantedFiles.php"
+		"GlobalUsage": "includes/GlobalUsage.php",
+		"GlobalUsageHooks": "includes/GlobalUsageHooks.php",
+		"GlobalUsageImagePageHooks": "includes/GlobalUsageImagePageHooks.php",
+		"SpecialGlobalUsage": "includes/SpecialGlobalUsage.php",
+		"GlobalUsageQuery": "includes/GlobalUsageQuery.php",
+		"ApiQueryGlobalUsage": "includes/ApiQueryGlobalUsage.php",
+		"GlobalUsageCachePurgeJob": "includes/GlobalUsageCachePurgeJob.php",
+		"SpecialMostGloballyLinkedFiles": "includes/SpecialMostGloballyLinkedFiles.php",
+		"SpecialGloballyWantedFiles": "includes/SpecialGloballyWantedFiles.php",
+		"SpecialGloballyUnusedFiles": "includes/SpecialGloballyUnusedFiles.php"
 	},
 	"@doc": [
 		"Things that can cause link updates:",
@@ -79,14 +84,14 @@
 		]
 	},
 	"config": {
-		"@doc": [
+		"@docGlobalUsageDatabase": [
 			"If set to false, the local database contains the globalimagelinks table",
 			"Else set to something understandable to LBFactory"
 		],
 		"GlobalUsageDatabase": false,
-		"@doc": "Name of the shared repo that backlinks are shared for",
+		"@docGlobalUsageSharedRepoWiki": "Name of the shared repo that backlinks are shared for",
 		"GlobalUsageSharedRepoWiki": false,
-		"@doc": [
+		"@docGlobalUsagePurgeBacklinks": [
 			"If set to true, this will purge pages on the wikis that use a file when it changes.",
 			"This works by directly inserting HTMLCacheUpdate jobs into the local wikis.",
 			"@see $wgGlobalUsagePurgeBacklinks"

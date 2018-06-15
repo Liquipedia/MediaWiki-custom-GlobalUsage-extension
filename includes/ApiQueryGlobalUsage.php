@@ -24,7 +24,7 @@
 
 class ApiQueryGlobalUsage extends ApiQueryBase {
 	public function __construct( $query, $moduleName ) {
-		parent :: __construct( $query, $moduleName, 'gu' );
+		parent::__construct( $query, $moduleName, 'gu' );
 	}
 
 	public function execute() {
@@ -37,9 +37,7 @@ class ApiQueryGlobalUsage extends ApiQueryBase {
 			$pageIds = $pageIds[NS_FILE];
 			$query = new GlobalUsageQuery( array_keys( $pageIds ) );
 			if ( !is_null( $params['continue'] ) ) {
-				if ( !$query->setOffset( $params['continue'] ) ) {
-					$this->dieUsage( 'Invalid continue parameter', 'badcontinue' );
-				}
+				$this->dieContinueUsageIf( !$query->setOffset( $params['continue'] ) );
 			}
 			$query->setLimit( $params['limit'] );
 			$query->filterLocal( $params['filterlocal'] );
@@ -58,13 +56,15 @@ class ApiQueryGlobalUsage extends ApiQueryBase {
 						} else {
 							$title = $item['title'];
 						}
-						$result = array(
+						$result = [
 							'title' => $title,
 							'wiki' => WikiMap::getWikiName( $wiki )
-						);
+						];
 						if ( isset( $prop['url'] ) ) {
-							/* We expand the url because we don't want protocol relative urls in API results */
-							$result['url'] = wfExpandUrl( WikiMap::getForeignUrl( $item['wiki'], $title ), PROTO_CURRENT );
+							// We expand the url because we don't want protocol relative urls
+							// in API results
+							$result['url'] = wfExpandUrl(
+								WikiMap::getForeignUrl( $item['wiki'], $title ), PROTO_CURRENT );
 						}
 						if ( isset( $prop['pageid'] ) ) {
 							$result['pageid'] = $item['id'];
@@ -74,7 +74,7 @@ class ApiQueryGlobalUsage extends ApiQueryBase {
 						}
 
 						$fit = $apiResult->addValue(
-							array( 'query', 'pages', $pageId, 'globalusage' ),
+							[ 'query', 'pages', $pageId, 'globalusage' ],
 							null,
 							$result
 						);
@@ -101,45 +101,46 @@ class ApiQueryGlobalUsage extends ApiQueryBase {
 		$pageIds = $this->getPageSet()->getAllTitlesByNamespace();
 		foreach ( $pageIds[NS_FILE] as $id ) {
 			$result->addIndexedTagName(
-				array( 'query', 'pages', $id, 'globalusage' ),
+				[ 'query', 'pages', $id, 'globalusage' ],
 				'gu'
 			);
 		}
 	}
 
 	public function getAllowedParams() {
-		return array(
-			'prop' => array(
+		return [
+			'prop' => [
 				ApiBase::PARAM_DFLT => 'url',
-				ApiBase::PARAM_TYPE => array(
+				ApiBase::PARAM_TYPE => [
 					'url',
 					'pageid',
 					'namespace',
-				),
+				],
 				ApiBase::PARAM_ISMULTI => true,
-			),
-			'limit' => array(
-				ApiBase :: PARAM_DFLT => 10,
-				ApiBase :: PARAM_TYPE => 'limit',
-				ApiBase :: PARAM_MIN => 1,
-				ApiBase :: PARAM_MAX => ApiBase :: LIMIT_BIG1,
-				ApiBase :: PARAM_MAX2 => ApiBase :: LIMIT_BIG2
-			),
-			'continue' => array(
+			],
+			'limit' => [
+				ApiBase::PARAM_DFLT => 10,
+				ApiBase::PARAM_TYPE => 'limit',
+				ApiBase::PARAM_MIN => 1,
+				ApiBase::PARAM_MAX => ApiBase::LIMIT_BIG1,
+				ApiBase::PARAM_MAX2 => ApiBase::LIMIT_BIG2
+			],
+			'continue' => [
 				ApiBase::PARAM_HELP_MSG => 'api-help-param-continue',
-			),
+			],
 			'filterlocal' => false,
-		);
+		];
 	}
 
 	/**
 	 * @see ApiBase::getExamplesMessages()
+	 * @return array
 	 */
 	protected function getExamplesMessages() {
-		return array(
+		return [
 			'action=query&prop=globalusage&titles=File:Example.jpg'
 				=> 'apihelp-query+globalusage-example-1',
-		);
+		];
 	}
 
 	public function getCacheMode( $params ) {

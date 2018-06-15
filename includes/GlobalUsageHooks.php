@@ -9,7 +9,7 @@ class GlobalUsageHooks {
 	/**
 	 * Hook to LinksUpdateComplete
 	 * Deletes old links from usage table and insert new ones.
-	 * @param $linksUpdater LinksUpdate
+	 * @param LinksUpdate $linksUpdater
 	 * @param int|null $ticket
 	 * @return bool
 	 */
@@ -19,7 +19,7 @@ class GlobalUsageHooks {
 		// Create a list of locally existing images (DB keys)
 		$images = array_keys( $linksUpdater->getImages() );
 
-		$localFiles = array();
+		$localFiles = [];
 		$repo = RepoGroup::singleton()->getLocalRepo();
 		$imagesInfo = $repo->findFiles( $images, FileRepo::NAME_AND_TIME_ONLY );
 		foreach ( $imagesInfo as $dbKey => $info ) {
@@ -53,11 +53,11 @@ class GlobalUsageHooks {
 	 * Hook to TitleMoveComplete
 	 * Sets the page title in usage table to the new name.
 	 * For shared file moves, purges all pages in the wiki farm that use the files.
-	 * @param $ot Title
-	 * @param $nt Title
-	 * @param $user User
-	 * @param $pageid int
-	 * @param $redirid
+	 * @param Title $ot
+	 * @param Title $nt
+	 * @param User $user
+	 * @param int $pageid
+	 * @param int $redirid
 	 * @return bool
 	 */
 	public static function onTitleMoveComplete( $ot, $nt, $user, $pageid, $redirid ) {
@@ -65,15 +65,15 @@ class GlobalUsageHooks {
 		$gu->moveTo( $pageid, $nt );
 
 		if ( self::fileUpdatesCreatePurgeJobs() ) {
-			$jobs = array();
+			$jobs = [];
 			if ( $ot->inNamespace( NS_FILE ) ) {
-				$jobs[] = new GlobalUsageCachePurgeJob( $ot, array() );
+				$jobs[] = new GlobalUsageCachePurgeJob( $ot, [] );
 			}
 			if ( $nt->inNamespace( NS_FILE ) ) {
-				$jobs[] = new GlobalUsageCachePurgeJob( $nt, array() );
+				$jobs[] = new GlobalUsageCachePurgeJob( $nt, [] );
 			}
 			// Push the jobs after DB commit but cancel on rollback
-			wfGetDB( DB_MASTER )->onTransactionIdle( function() use ( $jobs ) {
+			wfGetDB( DB_MASTER )->onTransactionIdle( function () use ( $jobs ) {
 				JobQueueGroup::singleton()->lazyPush( $jobs );
 			} );
 		}
@@ -84,10 +84,10 @@ class GlobalUsageHooks {
 	/**
 	 * Hook to ArticleDeleteComplete
 	 * Deletes entries from usage table.
-	 * @param $article Article
-	 * @param $user User
-	 * @param $reason string
-	 * @param $id int
+	 * @param Article $article
+	 * @param User $user
+	 * @param string $reason
+	 * @param int $id
 	 * @return bool
 	 */
 	public static function onArticleDeleteComplete( $article, $user, $reason, $id ) {
@@ -102,11 +102,11 @@ class GlobalUsageHooks {
 	 * Hook to FileDeleteComplete
 	 * Copies the local link table to the global.
 	 * Purges all pages in the wiki farm that use the file if it is a shared repo file.
-	 * @param $file File
-	 * @param $oldimage
-	 * @param $article Article
-	 * @param $user User
-	 * @param $reason string
+	 * @param File $file
+	 * @param File $oldimage
+	 * @param Article $article
+	 * @param User $user
+	 * @param string $reason
 	 * @return bool
 	 */
 	public static function onFileDeleteComplete( $file, $oldimage, $article, $user, $reason ) {
@@ -115,7 +115,7 @@ class GlobalUsageHooks {
 			$gu->copyLocalImagelinks( $file->getTitle() );
 
 			if ( self::fileUpdatesCreatePurgeJobs() ) {
-				$job = new GlobalUsageCachePurgeJob( $file->getTitle(), array() );
+				$job = new GlobalUsageCachePurgeJob( $file->getTitle(), [] );
 				JobQueueGroup::singleton()->push( $job );
 			}
 		}
@@ -127,10 +127,10 @@ class GlobalUsageHooks {
 	 * Hook to FileUndeleteComplete
 	 * Deletes the file from the global link table.
 	 * Purges all pages in the wiki farm that use the file if it is a shared repo file.
-	 * @param $title Title
-	 * @param $versions
-	 * @param $user User
-	 * @param $reason string
+	 * @param Title $title
+	 * @param array $versions
+	 * @param User $user
+	 * @param string $reason
 	 * @return bool
 	 */
 	public static function onFileUndeleteComplete( $title, $versions, $user, $reason ) {
@@ -138,7 +138,7 @@ class GlobalUsageHooks {
 		$gu->deleteLinksToFile( $title );
 
 		if ( self::fileUpdatesCreatePurgeJobs() ) {
-			$job = new GlobalUsageCachePurgeJob( $title, array() );
+			$job = new GlobalUsageCachePurgeJob( $title, [] );
 			JobQueueGroup::singleton()->push( $job );
 		}
 
@@ -149,7 +149,7 @@ class GlobalUsageHooks {
 	 * Hook to UploadComplete
 	 * Deletes the file from the global link table.
 	 * Purges all pages in the wiki farm that use the file if it is a shared repo file.
-	 * @param $upload File
+	 * @param File $upload
 	 * @return bool
 	 */
 	public static function onUploadComplete( $upload ) {
@@ -157,7 +157,7 @@ class GlobalUsageHooks {
 		$gu->deleteLinksToFile( $upload->getTitle() );
 
 		if ( self::fileUpdatesCreatePurgeJobs() ) {
-			$job = new GlobalUsageCachePurgeJob( $upload->getTitle(), array() );
+			$job = new GlobalUsageCachePurgeJob( $upload->getTitle(), [] );
 			JobQueueGroup::singleton()->push( $job );
 		}
 
@@ -187,7 +187,7 @@ class GlobalUsageHooks {
 
 	/**
 	 * Hook to make sure globalimagelinks table gets duplicated for parsertests
-	 * @param $tables array
+	 * @param array &$tables
 	 * @return bool
 	 */
 	public static function onParserTestTables( &$tables ) {
@@ -198,29 +198,34 @@ class GlobalUsageHooks {
 	/**
 	 * Hook to apply schema changes
 	 *
-	 * @param $updater DatabaseUpdater
+	 * @param DatabaseUpdater $updater
 	 * @return bool
 	 */
 	public static function onLoadExtensionSchemaUpdates( $updater = null ) {
-		$dir = dirname( __FILE__ );
+		$dir = dirname( __DIR__ ) . '/patches';
 
 		if ( $updater->getDB()->getType() == 'mysql' || $updater->getDB()->getType() == 'sqlite' ) {
-			$updater->addExtensionUpdate( array( 'addTable', 'globalimagelinks',
-				"$dir/GlobalUsage.sql", true ) );
-			$updater->addExtensionUpdate( array( 'addIndex', 'globalimagelinks',
-				'globalimagelinks_wiki_nsid_title', "$dir/patches/patch-globalimagelinks_wiki_nsid_title.sql", true ) );
+			$updater->addExtensionUpdate( [ 'addTable', 'globalimagelinks',
+				"$dir/GlobalUsage.sql", true ] );
+			$updater->addExtensionUpdate( [ 'addIndex', 'globalimagelinks',
+				'globalimagelinks_wiki_nsid_title',
+				"$dir/patch-globalimagelinks_wiki_nsid_title.sql", true ] );
 		} elseif ( $updater->getDB()->getType() == 'postgresql' ) {
-			$updater->addExtensionUpdate( array( 'addTable', 'globalimagelinks',
-				"$dir/GlobalUsage.pg.sql", true ) );
-			$updater->addExtensionUpdate( array( 'addIndex', 'globalimagelinks',
-				'globalimagelinks_wiki_nsid_title', "$dir/patches/patch-globalimagelinks_wiki_nsid_title.pg.sql", true ) );
+			$updater->addExtensionUpdate( [ 'addTable', 'globalimagelinks',
+				"$dir/GlobalUsage.pg.sql", true ] );
+			$updater->addExtensionUpdate( [ 'addIndex', 'globalimagelinks',
+				'globalimagelinks_wiki_nsid_title',
+				"$dir/patch-globalimagelinks_wiki_nsid_title.pg.sql", true ] );
 		}
 		return true;
 	}
 
 	public static function onwgQueryPages( &$queryPages ) {
-		$queryPages[] = array( 'MostGloballyLinkedFilesPage', 'MostGloballyLinkedFiles' );
-		$queryPages[] = array( 'SpecialGloballyWantedFiles', 'GloballyWantedFiles' );
+		$queryPages[] = [ 'SpecialMostGloballyLinkedFiles', 'MostGloballyLinkedFiles' ];
+		$queryPages[] = [ 'SpecialGloballyWantedFiles', 'GloballyWantedFiles' ];
+		if ( GlobalUsage::onSharedRepo() ) {
+			$queryPages[] = [ 'SpecialGloballyUnusedFiles', 'GloballyUnusedFiles' ];
+		}
 		return true;
 	}
 }
