@@ -36,7 +36,7 @@ class ApiQueryGlobalUsage extends ApiQueryBase {
 			# Create a query and set parameters
 			$pageIds = $pageIds[NS_FILE];
 			$query = new GlobalUsageQuery( array_keys( $pageIds ) );
-			if ( !is_null( $params['continue'] ) ) {
+			if ( $params['continue'] !== null ) {
 				$this->dieContinueUsageIf( !$query->setOffset( $params['continue'] ) );
 			}
 			$query->setLimit( $params['limit'] );

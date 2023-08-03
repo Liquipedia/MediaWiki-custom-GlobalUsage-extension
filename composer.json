@@ -1,19 +1,43 @@
 {
 	"require-dev": {
-		"jakub-onderka/php-parallel-lint": "1.0.0",
-		"jakub-onderka/php-console-highlighter": "0.3.2",
-		"mediawiki/mediawiki-codesniffer": "18.0.0",
-		"mediawiki/minus-x": "0.3.1"
+		"liquipedia/sqllint": "*",
+		"mediawiki/mediawiki-codesniffer": "*",
+		"mediawiki/minus-x": "*",
+		"php-parallel-lint/php-parallel-lint": "*",
+		"php-parallel-lint/php-console-highlighter": "*"
 	},
 	"scripts": {
-		"fix": [
-			"phpcbf",
-			"minus-x fix ."
+		"lint": [
+			"parallel-lint --colors --exclude vendor ."
+		],
+		"phpcs": [
+			"phpcs -p -s"
+		],
+		"sqllint": [
+			"sqllint"
+		],
+		"minus-x": [
+			"minus-x check ."
 		],
 		"test": [
-			"parallel-lint . --exclude vendor --exclude node_modules",
-			"phpcs -p -s",
-			"minus-x check ."
+			"composer minus-x",
+			"composer lint",
+			"composer phpcs",
+			"composer sqllint"
+		],
+		"fix": [
+			"minus-x fix .",
+			"phpcbf"
+		],
+		"phpcs-junit": [
+			"phpcs --report=junit > report-phpcs.xml"
+		],
+		"sqllint-junit": [
+			"sqllint --report=junit > report-sqllint.xml"
+		],
+		"reports-junit": [
+			"composer phpcs-junit",
+			"composer sqllint-junit"
 		]
 	}
 }

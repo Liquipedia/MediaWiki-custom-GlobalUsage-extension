@@ -29,7 +29,7 @@ class SpecialGloballyWantedFiles extends WantedFilesPage {
 	/**
 	 * Output an extra header
 	 *
-	 * @return String html to output
+	 * @return string html to output
 	 */
 	function getPageHeader() {
 		if ( RepoGroup::singleton()->hasForeignRepos() ) {
@@ -52,7 +52,7 @@ class SpecialGloballyWantedFiles extends WantedFilesPage {
 	function isCacheable() {
 		global $wgGlobalUsageDatabase;
 		return GlobalUsage::onSharedRepo()
-			&& ( !$wgGlobalUsageDatabase || $wgGlobalUsageDatabase === wfWikiID() );
+			&& ( !$wgGlobalUsageDatabase || $wgGlobalUsageDatabase === WikiMap::getCurrentWikiId() );
 	}
 
 	/**
@@ -76,7 +76,7 @@ class SpecialGloballyWantedFiles extends WantedFilesPage {
 	 *
 	 * @param Skin $skin
 	 * @param stdClass $result A row from the database
-	 * @return String HTML to output
+	 * @return string HTML to output
 	 */
 	public function formatResult( $skin, $result ) {
 		// If some of the client wikis are $wgCapitalLinks = false

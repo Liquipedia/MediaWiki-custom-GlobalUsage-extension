@@ -39,7 +39,8 @@
 		"GlobalUsageCachePurgeJob": "includes/GlobalUsageCachePurgeJob.php",
 		"SpecialMostGloballyLinkedFiles": "includes/SpecialMostGloballyLinkedFiles.php",
 		"SpecialGloballyWantedFiles": "includes/SpecialGloballyWantedFiles.php",
-		"SpecialGloballyUnusedFiles": "includes/SpecialGloballyUnusedFiles.php"
+		"SpecialGloballyUnusedFiles": "includes/SpecialGloballyUnusedFiles.php",
+		"Helper": "includes/Helper.php"
 	},
 	"@doc": [
 		"Things that can cause link updates:",

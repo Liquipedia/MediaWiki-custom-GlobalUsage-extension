@@ -1,4 +1,7 @@
 <?php
+
+use MediaWiki\MediaWikiServices;
+
 /**
  * Special page to show global file usage. Also contains hook functions for
  * showing usage on an image page.
@@ -31,12 +34,12 @@ class SpecialGlobalUsage extends SpecialPage {
 
 		$this->setHeaders();
 		$this->getOutput()->addWikiMsg( 'globalusage-header' );
-		if ( !is_null( $this->target ) ) {
+		if ( $this->target !== null ) {
 			$this->getOutput()->addWikiMsg( 'globalusage-header-image', $this->target->getText() );
 		}
 		$this->showForm();
 
-		if ( is_null( $this->target ) ) {
+		if ( $this->target === null ) {
 			$this->getOutput()->setPageTitle( $this->msg( 'globalusage' ) );
 			return;
 		}
@@ -51,13 +54,13 @@ class SpecialGlobalUsage extends SpecialPage {
 	 * Shows the search form
 	 */
 	private function showForm() {
-		global $wgScript;
+		$script = $this->getConfig()->get( 'Script' );
 
 		$this->getOutput()->enableOOUI();
 		/* Build form */
 		$form = new OOUI\FormLayout( [
 			'method' => 'get',
-			'action' => $wgScript,
+			'action' => $script,
 		] );
 
 		$fields = [];
@@ -67,7 +70,7 @@ class SpecialGlobalUsage extends SpecialPage {
 				'id' => 'target',
 				'autosize' => true,
 				'infusable' => true,
-				'value' => is_null( $this->target ) ? '' : $this->target->getText(),
+				'value' => $this->target === null ? '' : $this->target->getText(),
 			] ),
 			[
 				'label' => $this->msg( 'globalusage-filename' )->text(),
@@ -111,7 +114,7 @@ class SpecialGlobalUsage extends SpecialPage {
 		$form->appendContent(
 			$fieldset,
 			new OOUI\HtmlSnippet(
-				Html::hidden( 'title', $this->getPageTitle()->getPrefixedText() )  .
+				Html::hidden( 'title', $this->getPageTitle()->getPrefixedText() ) .
 				Html::hidden( 'limit', $this->getRequest()->getInt( 'limit', 50 ) )
 			)
 		);
@@ -125,17 +128,20 @@ class SpecialGlobalUsage extends SpecialPage {
 			] )
 		);
 
-		if ( !is_null( $this->target ) && wfFindFile( $this->target ) ) {
-			// Show the image if it exists
-			$html = Linker::makeThumbLinkObj(
-				$this->target,
-				wfFindFile( $this->target ),
-				/* $label */ $this->target->getPrefixedText(),
-				/* $alt */ '', /* $align */ $this->getLanguage()->alignEnd(),
-				/* $handlerParams */ [], /* $framed */ false,
-				/* $manualThumb */ false
-			);
-			$this->getOutput()->addHtml( $html );
+		if ( $this->target !== null ) {
+			$file = MediaWikiServices::getInstance()->getRepoGroup()->findFile( $this->target );
+			if ( $file ) {
+				// Show the image if it exists
+				$html = Linker::makeThumbLinkObj(
+					$this->target,
+					$file,
+					/* $label */ $this->target->getPrefixedText(),
+					/* $alt */ '', /* $align */ $this->getLanguage()->alignEnd(),
+					/* $handlerParams */ [], /* $framed */ false,
+					/* $manualThumb */ false
+				);
+				$this->getOutput()->addHtml( $html );
+			}
 		}
 	}
 
@@ -143,7 +149,6 @@ class SpecialGlobalUsage extends SpecialPage {
 	 * Creates as queryer and executes it based on $this->getRequest()
 	 */
 	private function showResult() {
-		global $wgConf;
 		$query = new GlobalUsageQuery( $this->target );
 		$request = $this->getRequest();
 
@@ -171,13 +176,13 @@ class SpecialGlobalUsage extends SpecialPage {
 
 		// Top navbar
 		$out->addHtml( $navbar );
-
 		$out->addHtml( '<div id="mw-globalusage-result">' );
 		foreach ( $query->getSingleImageResult() as $wiki => $result ) {
+			$wikiName = Helper::getWikiName( substr( $wiki, strlen( 'liquipedia-' ) ) );
 			$out->addHtml(
 				'<h2>' . $this->msg(
 					'globalusage-on-wiki',
-					$targetName, $wgConf->get( 'wgSitename', $wiki ) )->parse()
+					$targetName, $wikiName )->parse()
 					. "</h2><ul>\n" );
 			foreach ( $result as $item ) {
 				$out->addHtml( "\t<li>" . self::formatItem( $item ) . "</li>\n" );
@@ -193,7 +198,7 @@ class SpecialGlobalUsage extends SpecialPage {
 	/**
 	 * Helper to format a specific item
 	 * @param array $item
-	 * @return String
+	 * @return string
 	 */
 	public static function formatItem( $item ) {
 		if ( !$item['namespace'] ) {
