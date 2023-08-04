@@ -178,7 +178,7 @@ class SpecialGlobalUsage extends SpecialPage {
 		$out->addHtml( $navbar );
 		$out->addHtml( '<div id="mw-globalusage-result">' );
 		foreach ( $query->getSingleImageResult() as $wiki => $result ) {
-			$wikiName = Helper::getWikiName( substr( $wiki, strlen( 'liquipedia-' ) ) );
+			$wikiName = GlobalUsageHelper::getWikiName( substr( $wiki, strlen( 'liquipedia-' ) ) );
 			$out->addHtml(
 				'<h2>' . $this->msg(
 					'globalusage-on-wiki',

@@ -51,7 +51,7 @@ class GlobalUsageImagePageHooks {
 
 		$guHtml = '';
 		foreach ( $query->getSingleImageResult() as $wiki => $result ) {
-			$wikiName = Helper::getWikiName( substr( $wiki, strlen( 'liquipedia-' ) ) );
+			$wikiName = GlobalUsageHelper::getWikiName( substr( $wiki, strlen( 'liquipedia-' ) ) );
 			$escWikiName = Sanitizer::escapeClass( $wikiName );
 			$guHtml .= "<li class='mw-gu-onwiki-$escWikiName'>" . $context->msg(
 				'globalusage-on-wiki',

@@ -40,7 +40,7 @@
 		"SpecialMostGloballyLinkedFiles": "includes/SpecialMostGloballyLinkedFiles.php",
 		"SpecialGloballyWantedFiles": "includes/SpecialGloballyWantedFiles.php",
 		"SpecialGloballyUnusedFiles": "includes/SpecialGloballyUnusedFiles.php",
-		"Helper": "includes/Helper.php"
+		"GlobalUsageHelper": "includes/GlobalUsageHelper.php"
 	},
 	"@doc": [
 		"Things that can cause link updates:",
