@@ -93,7 +93,7 @@ class SpecialMostGloballyLinkedFiles extends MostimagesPage {
 		// to this point by $this->isCachable(), but just to be safe:
 		$this->assertOnSharedRepo();
 
-		if ( $wgGlobalUsageDatabase === false || $wgGlobalUsageDatabase === wfWikiID() ) {
+		if ( $wgGlobalUsageDatabase === false || $wgGlobalUsageDatabase === WikiMap::getCurrentWikiId() ) {
 			// We are using the local wiki
 			return parent::getRecacheDB();
 		} else {

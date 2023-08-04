@@ -73,7 +73,7 @@ class GlobalUsageHooks {
 				$jobs[] = new GlobalUsageCachePurgeJob( $nt, [] );
 			}
 			// Push the jobs after DB commit but cancel on rollback
-			wfGetDB( DB_MASTER )->onTransactionIdle( function () use ( $jobs ) {
+			wfGetDB( DB_MASTER )->onTransactionIdle( static function () use ( $jobs ) {
 				JobQueueGroup::singleton()->lazyPush( $jobs );
 			} );
 		}
@@ -173,7 +173,7 @@ class GlobalUsageHooks {
 	private static function fileUpdatesCreatePurgeJobs() {
 		global $wgGlobalUsageSharedRepoWiki, $wgGlobalUsagePurgeBacklinks;
 
-		return ( $wgGlobalUsagePurgeBacklinks && wfWikiId() === $wgGlobalUsageSharedRepoWiki );
+		return ( $wgGlobalUsagePurgeBacklinks && WikiMap::getCurrentWikiId() === $wgGlobalUsageSharedRepoWiki );
 	}
 
 	/**
@@ -182,7 +182,7 @@ class GlobalUsageHooks {
 	 * @return GlobalUsage
 	 */
 	private static function getGlobalUsage() {
-		return new GlobalUsage( wfWikiID(), GlobalUsage::getGlobalDB( DB_MASTER ) );
+		return new GlobalUsage( WikiMap::getCurrentWikiId(), GlobalUsage::getGlobalDB( DB_MASTER ) );
 	}
 
 	/**
@@ -198,7 +198,7 @@ class GlobalUsageHooks {
 	/**
 	 * Hook to apply schema changes
 	 *
-	 * @param DatabaseUpdater $updater
+	 * @param DatabaseUpdater|null $updater
 	 * @return bool
 	 */
 	public static function onLoadExtensionSchemaUpdates( $updater = null ) {

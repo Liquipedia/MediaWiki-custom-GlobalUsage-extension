@@ -1,6 +1,10 @@
 <?php
 
 class GlobalUsageImagePageHooks {
+
+	/**
+	 * @var array
+	 */
 	private static $queryCache = [];
 
 	/**
@@ -35,7 +39,6 @@ class GlobalUsageImagePageHooks {
 	 * @return bool
 	 */
 	public static function onImagePageAfterImageLinks( $imagePage, &$html ) {
-		global $wgConf;
 		if ( !self::hasResults( $imagePage ) ) {
 			return true;
 		}
@@ -48,7 +51,7 @@ class GlobalUsageImagePageHooks {
 
 		$guHtml = '';
 		foreach ( $query->getSingleImageResult() as $wiki => $result ) {
-			$wikiName = $wgConf->get( 'wgSitename', $wiki );
+			$wikiName = GlobalUsageHelper::getWikiName( substr( $wiki, strlen( 'liquipedia-' ) ) );
 			$escWikiName = Sanitizer::escapeClass( $wikiName );
 			$guHtml .= "<li class='mw-gu-onwiki-$escWikiName'>" . $context->msg(
 				'globalusage-on-wiki',

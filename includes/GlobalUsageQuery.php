@@ -7,11 +7,34 @@ use Wikimedia\Rdbms\IDatabase;
  *
  */
 class GlobalUsageQuery {
+
+	/**
+	 * @var int
+	 */
 	private $limit = 50;
+
+	/**
+	 * @var array
+	 */
 	private $offset;
+	/**
+	 * @var bool
+	 */
 	private $hasMore = false;
+
+	/**
+	 * @var bool
+	 */
 	private $filterLocal = false;
+
+	/**
+	 * @var array
+	 */
 	private $result;
+
+	/**
+	 * @var bool
+	 */
 	private $reversed = false;
 
 	/**
@@ -19,6 +42,9 @@ class GlobalUsageQuery {
 	 */
 	private $target;
 
+	/**
+	 * @var ResultWrapper
+	 */
 	private $lastRow;
 
 	/**
@@ -47,11 +73,11 @@ class GlobalUsageQuery {
 	 * Set the offset parameter
 	 *
 	 * @param string $offset offset
-	 * @param bool $reversed True if this is the upper offset
+	 * @param bool|null $reversed True if this is the upper offset
 	 * @return bool
 	 */
 	public function setOffset( $offset, $reversed = null ) {
-		if ( !is_null( $reversed ) ) {
+		if ( $reversed !== null ) {
 			$this->reversed = $reversed;
 		}
 
@@ -159,7 +185,7 @@ class GlobalUsageQuery {
 
 		if ( $this->filterLocal ) {
 			// Don't show local file usage
-			$where[] = 'gil_wiki != ' . $this->db->addQuotes( wfWikiId() );
+			$where[] = 'gil_wiki != ' . $this->db->addQuotes( WikiMap::getCurrentWikiId() );
 		}
 
 		$options = [
