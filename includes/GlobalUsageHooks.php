@@ -20,7 +20,8 @@ class GlobalUsageHooks {
 		$images = array_keys( $linksUpdater->getImages() );
 
 		$localFiles = [];
-		$repo = RepoGroup::singleton()->getLocalRepo();
+		$repoGroup = \MediaWiki\MediaWikiServices::getInstance()->getRepoGroup();
+		$repo = $repoGroup->getLocalRepo();
 		$imagesInfo = $repo->findFiles( $images, FileRepo::NAME_AND_TIME_ONLY );
 		foreach ( $imagesInfo as $dbKey => $info ) {
 			$localFiles[] = $dbKey;

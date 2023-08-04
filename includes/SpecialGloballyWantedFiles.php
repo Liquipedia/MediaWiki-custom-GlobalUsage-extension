@@ -32,7 +32,8 @@ class SpecialGloballyWantedFiles extends WantedFilesPage {
 	 * @return string html to output
 	 */
 	function getPageHeader() {
-		if ( RepoGroup::singleton()->hasForeignRepos() ) {
+		$repoGroup = \MediaWiki\MediaWikiServices::getInstance()->getRepoGroup();
+		if ( $repoGroup->hasForeignRepos() ) {
 			return $this->msg( 'globallywantedfiles-foreign-repo' )->parseAsBlock();
 		} else {
 			// Use grandparent behaviour. Parent adds a message
