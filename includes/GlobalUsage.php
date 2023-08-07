@@ -128,6 +128,7 @@ class GlobalUsage {
 	 *
 	 * @param Title $title Title of the file to copy entries from.
 	 */
+	public function copyLocalImagelinks( Title $title ) {
 		$res = $this->db->select(
 			[ 'imagelinks', 'page' ],
 			[ 'il_to', 'page_id', 'page_namespace', 'page_title' ],
